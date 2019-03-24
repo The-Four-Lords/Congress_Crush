@@ -18,7 +18,7 @@ func _ready():
 # SIGNAL: function for make_lock signal
 func _on_grid_make_lock(board_position):	
 	if lock_pieces.size() == 0:
-		lock_pieces = utils.make_2d_array(width,height)
+		lock_pieces = utils.get_matrix(width,height)
 	var current = licorice.instance()
 	add_child(current)
 	current.position = Vector2(board_position.x * 64 + 64 , -board_position.y * 64 + 800)

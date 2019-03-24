@@ -1,7 +1,7 @@
 extends Node2D
 
 # State Machine. To control the function calls timing (no refill before collapse for example)
-enum {wait, move}
+enum {wait, move, autocheck}
 var state
 
 # Grid variables
@@ -13,7 +13,7 @@ export (int) var offset =  64
 export (int) var y_offset = -2
 
 # Obstacle Stuff FIXME
-var empty_spaces = PoolVector2Array([Vector2(0,0),Vector2(7,0),Vector2(0,9),Vector2(7,9),Vector2(3,4),Vector2(4,4),Vector2(3,5),Vector2(4,5)])
+var empty_spaces #= PoolVector2Array([Vector2(0,0),Vector2(7,0),Vector2(0,9),Vector2(7,9),Vector2(3,4),Vector2(4,4),Vector2(3,5),Vector2(4,5)])
 var ice_spaces = PoolVector2Array([Vector2(3,0),Vector2(4,0),Vector2(3,9),Vector2(4,9)])
 var lock_spaces = PoolVector2Array([Vector2(3,2),Vector2(4,2),Vector2(3,7),Vector2(4,7)])
 
@@ -50,9 +50,48 @@ var controlling = false
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	state = move
-	all_pieces = utils.make_2d_array(width,height)
+	all_pieces = utils.get_matrix(width,height)
 	get_parent().get_node("main_theme_audio").play()
 	get_parent().get_node("ready_timer").start()
+	empty_spaces = utils.get_random_empty_spaces()
+
+func game_lopp():
+	var matchs = false
+	if state == wait and player_move():
+		state = move
+		#swap_pieces()
+		#matchs = check_matchs()
+		if matchs:
+			destroy_and_refill()
+			state = autocheck
+			ia_auto_checking()
+		else:
+			#swap_back()
+			state = wait
+
+# Check if player has move some piece
+func player_move():
+	return touch_imput()
+
+# Destroy matches pieces, collapse and refill columns
+func destroy_and_refill():
+	destroy_matches()
+	collapse_columns()
+	refill_columns()
+
+# Find matches, destroy them, collapse and refill columns
+func ia_auto_checking():
+	while state == autocheck:
+		var matchs = false #check_matchs()
+		if matchs:
+			destroy_and_refill()
+		else:
+			state = wait
+
+#####################################################################################
+#####################################################################################
+#####################################################################################
+#####################################################################################
 
 # Return true if the place is into spaces array
 func restricted_move(place,spaces):
@@ -122,6 +161,7 @@ func touch_imput():
 			controlling = false
 			final_touch = pixel_to_grid(get_global_mouse_position())
 			touch_difference(first_touch, final_touch)
+	return controlling
 
 # Swap a piece in column and row (i,j) to the "direction"
 func swap_pieces(column, row,direction):
