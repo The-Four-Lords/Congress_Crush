@@ -74,4 +74,4 @@ func get_matrix(width,height):
 func get_random_empty_spaces():
 	randomize()
 	var rand = randi() % empty_spaces_dictionary.size()	
-	return empty_spaces_dictionary[rand].value
+	return empty_spaces_dictionary[1].value

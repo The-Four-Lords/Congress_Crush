@@ -1,8 +1,10 @@
 extends Node2D
 
 # State Machine. To control the function calls timing (no refill before collapse for example)
-enum {wait, move, autocheck}
+enum {wait, move, wait_autocheck}
 var state
+var pieces_destroyed = 0
+var combo = 0
 
 # Grid variables
 export (int) var width = 8
@@ -55,38 +57,46 @@ func _ready():
 	get_parent().get_node("ready_timer").start()
 	empty_spaces = utils.get_random_empty_spaces()
 
-func game_lopp():
-	var matchs = false
-	if state == wait and player_move():
-		state = move
+# TODO
+func game_loop():
+	if state == move:
+		#state = wait
+		touch_imput() #swap_pieces
+		sound_acording_combo()
+		reset_combo()
 		#swap_pieces()
 		#matchs = check_matchs()
-		if matchs:
-			destroy_and_refill()
-			state = autocheck
-			ia_auto_checking()
-		else:
-			#swap_back()
-			state = wait
+		#if matchs:
+		#	state = wait_autocheck
+		#	print(state)
+		#destroy_and_refill()
+		#ia_auto_checking()
+		#else:			
+		#	#swap_back()
+		#	state = move
 
-# Check if player has move some piece
-func player_move():
-	return touch_imput()
+func reset_combo():
+	combo = 0
 
-# Destroy matches pieces, collapse and refill columns
+func sound_acording_combo():
+	print("Combo de "+String(combo)+" total de piezas destruidas "+String(pieces_destroyed))
+	pass
+
+
+# TODO: Destroy matches pieces, collapse and refill columns
 func destroy_and_refill():
 	destroy_matches()
 	collapse_columns()
 	refill_columns()
 
-# Find matches, destroy them, collapse and refill columns
+# TODO: Find matches, destroy them, collapse and refill columns
 func ia_auto_checking():
-	while state == autocheck:
+	while state == wait_autocheck:
 		var matchs = false #check_matchs()
 		if matchs:
 			destroy_and_refill()
 		else:
-			state = wait
+			state = move
 
 #####################################################################################
 #####################################################################################
@@ -101,8 +111,9 @@ func restricted_move(place,spaces):
 
 # Called every frame. 'delta' is the elapsed time since the previous frame
 func _process(delta):
-	if state == move:
-		touch_imput()
+	#if state == move:
+		#touch_imput()
+	game_loop()
 
 # Set all pieces into the grid
 func spawn_piece():
@@ -151,7 +162,7 @@ func pixel_to_grid(pixel):
 	return Vector2(new_x,new_y)
 
 # Check if some input is executed by the player
-func touch_imput():
+func touch_imput():	
 	if Input.is_action_just_pressed("ui_touch"):
 		if is_in_grid(pixel_to_grid(get_global_mouse_position())):
 			first_touch = pixel_to_grid(get_global_mouse_position())
@@ -206,7 +217,7 @@ func touch_difference(grid_1,grid_2):
 			swap_pieces(grid_1.x,grid_1.y,Vector2(0,-1))
 
 # Find the pieces matches
-func find_matches():
+func find_matches():	
 	for i in width:
 		for j in height:
 			if all_pieces[i][j] != null:
@@ -215,20 +226,29 @@ func find_matches():
 					if not all_pieces[i-1][j]==null && not all_pieces[i+1][j]==null:
 						if all_pieces[i-1][j].color == current_color && all_pieces[i+1][j].color == current_color:
 							var pieces = [all_pieces[i-1][j], all_pieces[i][j], all_pieces[i+1][j]]
-							change_pieces_visibility(pieces, true)							
+							var visibility_pieces_changed = change_pieces_visibility(pieces, true)
+							combo = visibility_pieces_changed
+							
 
 				if j > 0 && j < height - 1:
 					if not all_pieces[i][j-1]==null && not all_pieces[i][j+1]==null:
 						if all_pieces[i][j-1].color == current_color && all_pieces[i][j+1].color == current_color:
 							var pieces = [all_pieces[i][j-1], all_pieces[i][j], all_pieces[i][j+1]]
-							change_pieces_visibility(pieces, true)
+							var visibility_pieces_changed = change_pieces_visibility(pieces, true)
+							combo += visibility_pieces_changed
+	pieces_destroyed += combo	
 	get_parent().get_node('destroy_timer').start()
 
 # This method is main: Change the visibility of pieces array according matched value]
 func change_pieces_visibility(pieces, matched):
+	var visibility_pieces_changed = 0
 	for piece in pieces:
-		piece.matched = matched
+		if not piece.matched:
+			piece.matched = matched
+			visibility_pieces_changed += 1
 		piece.dim()
+	return visibility_pieces_changed
+	#print("Combo de "+String(pieces.size())+" total de piezas destruidas "+String(pieces_destroyed))
 
 # Destroy the pieces matched
 func destroy_matches():
