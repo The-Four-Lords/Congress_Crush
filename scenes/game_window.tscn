@@ -1,7 +1,7 @@
 [gd_scene load_steps=11 format=2]
 
 [ext_resource path="res://scripts/utils.gd" type="Script" id=1]
-[ext_resource path="res://alternative_sprites/back_painted_03.png" type="Texture" id=2]
+[ext_resource path="res://alternative_sprites/pieces/back_3.png" type="Texture" id=2]
 [ext_resource path="res://alternative_sprites/top_UI_ps.png" type="Texture" id=3]
 [ext_resource path="res://alternative_sprites/bottom_UI_ps.png" type="Texture" id=4]
 [ext_resource path="res://scripts/grid.gd" type="Script" id=5]
@@ -65,10 +65,6 @@ stream = ExtResource( 9 )
 [node name="combo_audio" type="AudioStreamPlayer" parent="."]
 stream = ExtResource( 10 )
 
-[connection signal="damage_ice" from="grid" to="ice_holder" method="_on_grid_damage_ice"]
-[connection signal="damage_lock" from="grid" to="lock_holder" method="_on_grid_damage_lock"]
-[connection signal="make_ice" from="grid" to="ice_holder" method="_on_grid_make_ice"]
-[connection signal="make_lock" from="grid" to="lock_holder" method="_on_grid_make_lock"]
 [connection signal="remove_lock" from="lock_holder" to="grid" method="_on_lock_holder_remove_lock"]
 [connection signal="timeout" from="destroy_timer" to="grid" method="_on_destroy_timer_timeout"]
 [connection signal="timeout" from="collapse_timer" to="grid" method="_on_collapse_timer_timeout"]

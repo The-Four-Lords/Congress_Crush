@@ -74,4 +74,15 @@ func get_matrix(width,height):
 func get_random_empty_spaces():
 	randomize()
 	var rand = randi() % empty_spaces_dictionary.size()	
-	return empty_spaces_dictionary[1].value
+	return empty_spaces_dictionary[rand].value
+
+func get_preloaded_pieces():
+	var preloaded_pieces = [
+	preload("res://scenes/piece/piece_blue.tscn"),
+	preload("res://scenes/piece/piece_green.tscn"),
+	preload("res://scenes/piece/piece_light_green.tscn"),
+	preload("res://scenes/piece/piece_orange.tscn"),
+	preload("res://scenes/piece/piece_yellow.tscn"),
+	preload("res://scenes/piece/piece_pink.tscn")
+	]
+	return preloaded_pieces
