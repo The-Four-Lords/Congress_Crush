@@ -25,12 +25,22 @@ var empty_spaces = utils.get_random_empty_spaces()
 # The piece array
 var possible_pieces = utils.get_preloaded_pieces()
 
+# Touch Variables
+var first_touch= Vector2(0,0)
+var final_touch= Vector2(0,0)
+
+# Swap Back Variables
+var piece_one = null
+var piece_two = null
+var last_place = Vector2(0,0)
+var last_direction = Vector2(0,0)
+var move_checked = false
+
 ##################################################################################################################################
 ##################################################    FUNCTIONS    ###############################################################
 ##################################################################################################################################
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	init()
 	load_board()
 
 # Called every frame. 'delta' is the elapsed time since the previous frame
@@ -41,25 +51,27 @@ func _process(delta):
 func game_loop():
 	if state == waiting_move:
 		var touch_input = get_touch_input()
-		if(exist_touch_input(touch_input)):
-			state = moving
-			print(state)
-			move_pieces(touch_input.x,touch_input.y)
+		if touch_input:
+			state = moving			
+			move_pieces(touch_input[0],touch_input[1])
 			var matchs = find_matches()
-			if matchs:
-				print("destroy_and_refill()")
-				print("ia_auto_checking()")
+			if matchs:				
+				destroy_and_refill(matchs)
+				#ia_auto_checking()
 			else:
 				print("swap_back()")
-				state = waiting_move
+				swap_back()
 
-# TODO: Initzialize the variables
-func init():
-	pass
+
+func swap_back():
+	# Move the prevously swapped pieces back to the previous place
+	if piece_one != null and piece_two != null:
+		swap_pieces(last_place.x, last_place.y, last_direction)
+	state = waiting_move
+	move_checked = false
 
 func load_board():
-	spawn_piece()#get_parent().get_node("ready_timer").start()
-	
+	get_parent().get_node("ready_timer").start()# spawn_piece()
 
 # Set all pieces into the grid
 func spawn_piece():
@@ -113,30 +125,27 @@ func grid_to_pixel(column, row):
 
 # Return the positions if some input is executed by the player
 func get_touch_input():
-	var first_touch
-	var final_touch
-	var touch_input
 	if Input.is_action_just_pressed("ui_touch"):
 		if is_in_grid(pixel_to_grid(get_global_mouse_position())):
-			first_touch = pixel_to_grid(get_global_mouse_position())
-			print(String(first_touch))
+			first_touch = pixel_to_grid(get_global_mouse_position())			
 			#controlling = true
 	if Input.is_action_just_released("ui_touch"):
 		if is_in_grid(pixel_to_grid(get_global_mouse_position())):
 			#controlling = false
 			final_touch = pixel_to_grid(get_global_mouse_position())
 			#touch_difference(first_touch, final_touch)
-			print(String(final_touch))
-			#touch_input = Vector2(first_touch,final_touch)
-	return touch_input
+			return PoolVector2Array([first_touch,final_touch])
+
+	return false
 
 # Return true is touch_input is not null
 func exist_touch_input(touch_input):
-	return touch_input != null
+	#print('exist_touch_input touch_input.size:'+String(touch_input.size()))
+	return touch_input.size() == 2
 
 # Swap the pieces considering the max distance (1) to move
-func move_pieces(first_touch,final_touch):
-	var difference = final_touch - first_touch
+func move_pieces(first_touch,final_touch):		
+	var difference = final_touch - first_touch	
 	if abs(difference.x)>abs(difference.y):
 		if difference.x>0:
 			swap_pieces(first_touch.x,first_touch.y,Vector2(1,0))
@@ -153,36 +162,47 @@ func swap_pieces(column, row,direction):
 	var first_piece =all_pieces[column][row]
 	var other_piece =all_pieces[column+direction.x][row+direction.y]
 	if first_piece != null && other_piece != null:
-		#store_info(first_piece, other_piece, Vector2(column,row), direction)
+		store_info(first_piece, other_piece, Vector2(column,row), direction)
 		all_pieces[column][row] = other_piece
 		all_pieces[column+direction.x][row+direction.y]= first_piece;
 		first_piece.move(grid_to_pixel(column+direction.x,row+direction.y))
 		other_piece.move(grid_to_pixel(column,row))
 
+func store_info(first_piece, other_piece, place, direction):
+	piece_one = first_piece
+	piece_two = other_piece
+	last_place = place
+	last_direction = direction
+
 # Find the pieces matches and return them
 func find_matches():
 	var total_matchs = []
-	for i in width:
-		for j in height:
-			if all_pieces[i][j] != null:
-				var current_color = all_pieces[i][j].color
-				if i > 0 && i < width - 1:
-					if not all_pieces[i-1][j]==null && not all_pieces[i+1][j]==null:
-						if all_pieces[i-1][j].color == current_color && all_pieces[i+1][j].color == current_color:
-							total_matchs.append([all_pieces[i-1][j], all_pieces[i][j], all_pieces[i+1][j]])
-
-				if j > 0 && j < height - 1:
-					if not all_pieces[i][j-1]==null && not all_pieces[i][j+1]==null:
-						if all_pieces[i][j-1].color == current_color && all_pieces[i][j+1].color == current_color:
-							total_matchs.append([all_pieces[i][j-1], all_pieces[i][j], all_pieces[i][j+1]])
+	if !move_checked:
+		for i in width:
+			for j in height:
+				if all_pieces[i][j] != null:
+					var current_color = all_pieces[i][j].color
+					if i > 0 && i < width - 1:
+						if not all_pieces[i-1][j]==null && not all_pieces[i+1][j]==null:
+							if all_pieces[i-1][j].color == current_color && all_pieces[i+1][j].color == current_color:
+								total_matchs.append(all_pieces[i-1][j])
+								total_matchs.append(all_pieces[i][j])
+								total_matchs.append(all_pieces[i+1][j])
+	
+					if j > 0 && j < height - 1:
+						if not all_pieces[i][j-1]==null && not all_pieces[i][j+1]==null:
+							if all_pieces[i][j-1].color == current_color && all_pieces[i][j+1].color == current_color:
+								total_matchs.append(all_pieces[i][j-1])
+								total_matchs.append(all_pieces[i][j])
+								total_matchs.append(all_pieces[i][j+1])	
 	return total_matchs
 
 # This method is main: Change the visibility of pieces array according matched value]
-func change_pieces_visibility(pieces, matched):
+func change_pieces_visibility(pieces):
 	var visibility_pieces_changed = 0
 	for piece in pieces:
 		if not piece.matched:
-			piece.matched = matched
+			piece.matched = true
 			visibility_pieces_changed += 1
 		piece.dim()
 	return visibility_pieces_changed
@@ -200,9 +220,95 @@ func is_in_grid(grid_position):
 			return true
 		return false
 
+# Destroy matches pieces, collapse and refill columns
+func destroy_and_refill(matchs):
+	change_pieces_visibility(matchs)
+	get_parent().get_node('destroy_timer').start()# destroy_matches()
+	get_parent().get_node('collapse_timer').start()#collapse_columns()
+	get_parent().get_node('refill_timer').start()# refill_columns()
+
+# Destroy the pieces matched
+func destroy_matches():
+	var was_matches = false
+	for i in width:
+		for j in height:
+			var piece = all_pieces[i][j]
+			if piece != null and piece.matched:
+				#damage_special(i,j) Fase 2
+				was_matches = true
+				piece.queue_free()
+				all_pieces[i][j] = null
+	move_checked = true
+	if was_matches:
+		get_parent().get_node("destroy_audio").play()
+		#get_parent().get_node('collapse_timer').start()
+	#else:
+		#swap_back()
+		#swap_pieces(last_place.x, last_place.y, last_direction)
+
+# Collapse the pieces into a column
+func collapse_columns():
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] == null and !restricted_move(Vector2(i,j), empty_spaces):
+				for k in range(j + 1, height):
+					if all_pieces[i][k] != null:
+						all_pieces[i][k].move(grid_to_pixel(i,j))
+						all_pieces[i][j] = all_pieces[i][k]
+						all_pieces[i][k] = null
+						break
+	get_parent().get_node('refill_timer').start()
+
+# Refill with pieces a column
+func refill_columns():
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] == null:
+				set_random_piece_on_grid(i,j)
+	recheck_matchs()
+
+# Check the matches after refill
+func recheck_matchs():
+	for i in width:
+		for j in height:
+			if all_pieces[i][j] != null and match_at(i,j,all_pieces[i][j].color):
+				print("recheck!")
+				var matchs = find_matches()
+				destroy_and_refill(matchs)
+				#get_parent().get_node("combo_audio").play()
+				#get_parent().get_node("destroy_timer").start()
+	state = waiting_move
+	move_checked = false
+
+# TODO: Find matches, destroy them, collapse and refill columns (causa error)
+func ia_auto_checking():
+	print("ia_auto_checking")
+	#state = autochecking
+	#state = waiting_move
+	var matchs = find_matches()
+	while matchs :		
+		matchs = find_matches()
+		if matchs:
+			print("ia_auto_checking: matchs!")
+			destroy_and_refill(matchs)
+		else:
+			state = waiting_move
+			move_checked = false
 ##################################################################################################################################
 ##################################################     SIGNALS     ###############################################################
 ##################################################################################################################################
 # SIGNAL: Spawn the pieces
 func _on_ready_timer_timeout():
 	spawn_piece()
+
+# SIGNAL: Destroy the pieces mached after a timing expecified. It is called when start function on timer node is executed
+func _on_destroy_timer_timeout():
+	destroy_matches()
+
+# SIGNAL: Collapse the pieces
+func _on_collapse_timer_timeout():
+	collapse_columns()
+
+# SIGNAL: Refill the grid with pieces
+func _on_refill_timer_timeout():
+	refill_columns()
