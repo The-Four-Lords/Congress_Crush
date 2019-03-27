@@ -1,2 +1,6 @@
-# Congress_Crush
-Congress Crush game in GoDot
+# Candy_Crash
+It is a example game based in the Candy Crash original game.
+
+**Needs GoDot 3.1**
+
+### STATUS: IN DEVELOP

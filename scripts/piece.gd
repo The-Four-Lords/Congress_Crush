@@ -10,7 +10,6 @@ func _ready():
 
 # Move the piece to the target
 func move(target):
-	print(String(position) + " - " + String(target))
 	move_tween.interpolate_property(self,"position",position,target,.4,
 	Tween.TRANS_ELASTIC,Tween.EASE_OUT)
 	move_tween.start()

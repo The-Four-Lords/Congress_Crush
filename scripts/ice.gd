@@ -9,5 +9,5 @@ func _ready():
 
 func take_damage(damage):
 	health -= damage
-	#print('take_damage damage['+String(damage)+'] health['+String(health)+']')
+	print('take_damage damage['+String(damage)+'] health['+String(health)+']')
 	# Can add damage effect here
