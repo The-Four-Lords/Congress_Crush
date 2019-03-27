@@ -40,6 +40,9 @@ var first_touch= Vector2(0,0)
 var final_touch= Vector2(0,0)
 var controlling = false
 
+# TODO: Matched pieces in one move
+var matched_pieces = []
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	state = move
@@ -56,6 +59,7 @@ func restricted_move(place,spaces):
 # Called every frame. 'delta' is the elapsed time since the previous frame
 func _process(delta):
 	if state == move:
+		matched_pieces = []
 		touch_imput()
 
 # Set all pieces into the grid
@@ -161,7 +165,7 @@ func touch_difference(grid_1,grid_2):
 			swap_pieces(grid_1.x,grid_1.y,Vector2(0,-1))
 
 # Find the pieces matches
-func find_matches():
+func find_matches():	
 	for i in width:
 		for j in height:
 			if all_pieces[i][j] != null:
@@ -177,11 +181,15 @@ func find_matches():
 						if all_pieces[i][j-1].color == current_color && all_pieces[i][j+1].color == current_color:
 							var pieces = [all_pieces[i][j-1], all_pieces[i][j], all_pieces[i][j+1]]
 							change_pieces_visibility(pieces, true)
+	# TODO
+	for piece_color in matched_pieces:
+		print(String(piece_color))#If two different colors ("pacto!")
 	get_parent().get_node('destroy_timer').start()
 
 # This method is main: Change the visibility of pieces array according matched value]
 func change_pieces_visibility(pieces, matched):
-	for piece in pieces:
+	for piece in pieces:		
+		matched_pieces.append(piece.color)		
 		piece.matched = matched
 		piece.dim()
 
@@ -199,7 +207,7 @@ func destroy_matches():
 	move_checked = true
 	if was_matches:
 		get_parent().get_node("destroy_audio").play()
-		get_parent().get_node('collapse_timer').start()
+		get_parent().get_node('collapse_timer').start()		
 	else:
 		swap_back()
 
@@ -253,9 +261,9 @@ func recheck_matchs():
 		for j in height:
 			if all_pieces[i][j] != null and match_at(i,j,all_pieces[i][j].color):
 				find_matches()				
-				get_parent().get_node("combo_audio").play()
+				get_parent().get_node("combo_audio").play()				
 				get_parent().get_node("destroy_timer").start()
-				return
+				return	
 	state = move
 	move_checked = false
 
