@@ -13,9 +13,9 @@ export (int) var offset =  64
 export (int) var y_offset = -2
 
 # Obstacle Stuff FIXME
-var empty_spaces = PoolVector2Array([Vector2(0,0),Vector2(7,0),Vector2(0,9),Vector2(7,9),Vector2(3,4),Vector2(4,4),Vector2(3,5),Vector2(4,5)])
-var ice_spaces = PoolVector2Array([Vector2(3,0),Vector2(4,0),Vector2(3,9),Vector2(4,9)])
-var lock_spaces = PoolVector2Array([Vector2(3,2),Vector2(4,2),Vector2(3,7),Vector2(4,7)])
+var empty_spaces = utils.get_random_empty_spaces()
+#var ice_spaces = PoolVector2Array([Vector2(3,0),Vector2(4,0),Vector2(3,9),Vector2(4,9)])
+#var lock_spaces = PoolVector2Array([Vector2(3,2),Vector2(4,2),Vector2(3,7),Vector2(4,7)])
 
 # Obstacle Signals
 signal damage_ice
@@ -24,14 +24,7 @@ signal make_lock
 signal damage_lock
 
 # The piece array
-var possible_pieces = [
-	preload("res://scenes/piece/piece_blue.tscn"),
-	preload("res://scenes/piece/piece_green.tscn"),
-	preload("res://scenes/piece/piece_light_green.tscn"),
-	preload("res://scenes/piece/piece_orange.tscn"),
-	preload("res://scenes/piece/piece_yellow.tscn"),
-	preload("res://scenes/piece/piece_pink.tscn")
-]
+var possible_pieces = utils.get_preloaded_pieces()
 # Current pieces in the screen
 var all_pieces
 
@@ -50,7 +43,7 @@ var controlling = false
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	state = move
-	all_pieces = utils.make_2d_array(width,height)
+	all_pieces = utils.get_matrix(width,height)
 	#get_parent().get_node("main_theme_audio").play()
 	get_parent().get_node("ready_timer").start()
 
@@ -73,12 +66,14 @@ func spawn_piece():
 			set_random_piece_on_grid(i,j)
 
 func spawn_ice():
-	for i in ice_spaces.size():
-		emit_signal("make_ice", ice_spaces[i])
+	#for i in ice_spaces.size():
+	#	emit_signal("make_ice", ice_spaces[i])
+	pass
 
 func spawn_lock():
-	for i in lock_spaces.size():
-		emit_signal("make_lock", lock_spaces[i])
+	#for i in lock_spaces.size():
+	#	emit_signal("make_lock", lock_spaces[i])
+	pass
 
 # Returns true is find at less 3 pieces with same color
 func match_at(column, row, color):
@@ -128,7 +123,7 @@ func swap_pieces(column, row,direction):
 	var first_piece =all_pieces[column][row]
 	var other_piece =all_pieces[column+direction.x][row+direction.y]
 	if first_piece != null && other_piece != null:
-		if not restricted_move(Vector2(column,row), lock_spaces) and not restricted_move(Vector2(column,row) + direction, lock_spaces):
+		#if not restricted_move(Vector2(column,row), lock_spaces) and not restricted_move(Vector2(column,row) + direction, lock_spaces):
 			store_info(first_piece, other_piece, Vector2(column,row), direction)
 			state = wait
 			all_pieces[column][row] = other_piece
@@ -281,12 +276,13 @@ func _on_refill_timer_timeout():
 
 # SIGNAL: Unlock the locked piece in place
 func _on_lock_holder_remove_lock(place):
-	for i in range (lock_spaces.size() -1, -1, -1):
-		if lock_spaces[i] == place:
-			lock_spaces.remove(i)
+	#for i in range (lock_spaces.size() -1, -1, -1):
+	#	if lock_spaces[i] == place:
+	#		lock_spaces.remove(i)
+	pass
 
 # SIGNAL: Spawn the pieces
 func _on_ready_timer_timeout():
 	spawn_piece()
-	spawn_ice()
+	#spawn_ice()
 	spawn_lock()
